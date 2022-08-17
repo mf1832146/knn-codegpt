@@ -388,7 +388,7 @@ def eval_acc(args, model, tokenizer, file_type='test'):
     saved_target_ids = []
     saved_meta = {}  # {'proj_id': [file_id: [start_token, end_token]]}
 
-    cached_file = os.path.join(args.output_dir, 'checkpoint_2000_cache_hidden')
+    cached_file = os.path.join(args.output_dir, 'cache_hidden')
     if os.path.exists(cached_file) and not args.overwrite_cache:
         logger.info("load project level hidden states.  ")
         with open(cached_file, 'rb') as handle:
@@ -457,16 +457,18 @@ def eval_acc(args, model, tokenizer, file_type='test'):
                                   vocab_size)
                 knn_scores[b] = p_knn
                 # [seq_len, vocab_size]
-            total_scores = 0.25 * knn_scores + 0.75 * pred_scores
-            # knn_mask = knn_scores != 0
-            # # [batch_size, seq_len-1,vocab_size]
-            # knn_sum = torch.sum(pred_scores * knn_mask, dim=-1, keepdim=True)  # [batch_size, seq_len-1, 1]
-            # knn_scores = knn_scores * knn_sum
-            # tmp_scores = pred_scores * torch.pow(knn_scores / (pred_scores + knn_scores), 0.25)
-            # tmp_sum = torch.sum(tmp_scores * knn_mask, dim=-1, keepdim=True)
-            # tmp_scores = tmp_scores / tmp_sum * knn_sum
-            #
-            # total_scores = pred_scores * (~knn_mask) + tmp_scores * knn_mask
+            if not args.no_hype:
+                total_scores = 0.25 * knn_scores + 0.75 * pred_scores
+            else:
+                knn_mask = knn_scores != 0
+                # [batch_size, seq_len-1,vocab_size]
+                knn_sum = torch.sum(pred_scores * knn_mask, dim=-1, keepdim=True)  # [batch_size, seq_len-1, 1]
+                knn_scores = knn_scores * knn_sum
+                tmp_scores = pred_scores * torch.pow(knn_scores / (pred_scores + knn_scores), 0.25)
+                tmp_sum = torch.sum(tmp_scores * knn_mask, dim=-1, keepdim=True)
+                tmp_scores = tmp_scores / tmp_sum * knn_sum
+
+                total_scores = pred_scores * (~knn_mask) + tmp_scores * knn_mask
             pred_ids = total_scores.argmax(-1)
 
         all_pred = []
@@ -614,7 +616,7 @@ def knn_faiss(hidden_state, cur_meta, saved_hidden_states, saved_target_ids, hid
     #logger.info("--[3/4] start compute softmax...")
     l2_dis = torch.from_numpy(l2_dis).to(hidden_state.device)  # [seq_len, k]
     neighbour_indexes = torch.from_numpy(neighbour_indexes).to(hidden_state.device)
-    logits = torch.softmax(-1 * l2_dis.sqrt(), dim=-1)
+    logits = torch.softmax(-1 * l2_dis.sqrt() / 5, dim=-1)
     #logger.info("--[3/4] end compute softmax...")
 
     #logger.info("--[4/4] start collect target index...")
@@ -805,6 +807,7 @@ def main():
     parser.add_argument('--tensorboard_dir', type=str)
 
     parser.add_argument('--only_id', action='store_true')
+    parser.add_argument('--no_hype', action='store_true')
     
     pool = None
     args = parser.parse_args()
