@@ -4,7 +4,7 @@ import json
 from javalang.tokenizer import *
 
 
-lits = json.load(open("../literals.json"))
+lits = json.load(open("literals.json"))
 
 token_types = {'BOS': 1,
                'Literals': 2,
