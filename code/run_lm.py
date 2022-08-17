@@ -457,18 +457,7 @@ def eval_acc(args, model, tokenizer, file_type='test'):
                                   vocab_size)
                 knn_scores[b] = p_knn
                 # [seq_len, vocab_size]
-            if not args.no_hype:
-                total_scores = 0.25 * knn_scores + 0.75 * pred_scores
-            else:
-                knn_mask = knn_scores != 0
-                # [batch_size, seq_len-1,vocab_size]
-                knn_sum = torch.sum(pred_scores * knn_mask, dim=-1, keepdim=True)  # [batch_size, seq_len-1, 1]
-                knn_scores = knn_scores * knn_sum
-                tmp_scores = pred_scores * torch.pow(knn_scores / (pred_scores + knn_scores), 0.25)
-                tmp_sum = torch.sum(tmp_scores * knn_mask, dim=-1, keepdim=True)
-                tmp_scores = tmp_scores / tmp_sum * knn_sum
-
-                total_scores = pred_scores * (~knn_mask) + tmp_scores * knn_mask
+            total_scores = 0.25 * knn_scores + 0.75 * pred_scores
             pred_ids = total_scores.argmax(-1)
 
         all_pred = []
@@ -583,11 +572,9 @@ def prepare_data(saved_meta, data_store_len):
 
 
 def knn_faiss(hidden_state, cur_meta, saved_hidden_states, saved_target_ids, hidden_mask, vocab_size):
-    # hidden_state size [seq_len, hidden_dim]
     proj_id, file_id = cur_meta.data.cpu().tolist()
 
     p_knn = torch.zeros((hidden_state.size(0), vocab_size)).to(hidden_state.device)
-    #logger.info("-[1/4] build search base...")
     hidden_states = saved_hidden_states[hidden_mask[file_id]]
     target_ids = saved_target_ids[hidden_mask[file_id]]
 
@@ -595,31 +582,21 @@ def knn_faiss(hidden_state, cur_meta, saved_hidden_states, saved_target_ids, hid
         return p_knn
     
     hidden_states = np.array(hidden_states).astype('float32')  # [nb, d]
-    #logger.info("--[2/4] start search...")
     nq, d = hidden_state.size()
     xq = hidden_state.data.cpu().numpy()
     res = faiss.StandardGpuResources()  # use a single GPU
 
     index_flat = faiss.IndexFlatL2(d)
-    #index_flat = faiss.index_factory(d, 'IVF100, PQ64', faiss.METRIC_L2)
-    # make it a flat GPU index
     gpu_index_flat = faiss.index_cpu_to_gpu(res, 0, index_flat)
-    #gpu_index_flat.train(hidden_states)
-    #gpu_index_flat.add(hidden_states)
-    #gpu_index = faiss.index_cpu_to_gpus_list(index_flat, gpus=[1,2])
     gpu_index_flat.add(hidden_states)
     
     k = min(1024, hidden_states.shape[0])
     l2_dis, neighbour_indexes = gpu_index_flat.search(xq, k)
-    #logger.info("--[2/4] end search...")
 
-    #logger.info("--[3/4] start compute softmax...")
     l2_dis = torch.from_numpy(l2_dis).to(hidden_state.device)  # [seq_len, k]
     neighbour_indexes = torch.from_numpy(neighbour_indexes).to(hidden_state.device)
-    logits = torch.softmax(-1 * l2_dis.sqrt() / 5, dim=-1)
-    #logger.info("--[3/4] end compute softmax...")
+    logits = torch.softmax(-1 * l2_dis.sqrt(), dim=-1)
 
-    #logger.info("--[4/4] start collect target index...")
     size = neighbour_indexes.size()
     target_ids = torch.Tensor(target_ids).long().to(hidden_state.device)
     neighbour_targets = torch.gather(target_ids, dim=0, index=neighbour_indexes.contiguous().view(-1))
