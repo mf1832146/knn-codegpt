@@ -466,7 +466,7 @@ def eval_acc(args, model, tokenizer, file_type='test'):
             tmp_sum = torch.sum(tmp_scores * knn_mask, dim=-1, keepdim=True)
             tmp_scores = tmp_scores / tmp_sum * knn_sum
 
-            total_scores = pred_scores * (1-knn_mask) + tmp_scores * knn_mask
+            total_scores = pred_scores * (~knn_mask) + tmp_scores * knn_mask
             pred_ids = total_scores.argmax(-1)
 
         all_pred = []
@@ -585,7 +585,7 @@ def knn_faiss(hidden_state, cur_meta, saved_hidden_states, saved_target_ids, hid
     proj_id, file_id = cur_meta.data.cpu().tolist()
 
     p_knn = torch.zeros((hidden_state.size(0), vocab_size)).to(hidden_state.device)
-    logger.info("-[1/4] build search base...")
+    #logger.info("-[1/4] build search base...")
     hidden_states = saved_hidden_states[hidden_mask[file_id]]
     target_ids = saved_target_ids[hidden_mask[file_id]]
 
@@ -593,7 +593,7 @@ def knn_faiss(hidden_state, cur_meta, saved_hidden_states, saved_target_ids, hid
         return p_knn
     
     hidden_states = np.array(hidden_states).astype('float32')  # [nb, d]
-    logger.info("--[2/4] start search...")
+    #logger.info("--[2/4] start search...")
     nq, d = hidden_state.size()
     xq = hidden_state.data.cpu().numpy()
     res = faiss.StandardGpuResources()  # use a single GPU
@@ -609,22 +609,22 @@ def knn_faiss(hidden_state, cur_meta, saved_hidden_states, saved_target_ids, hid
     
     k = min(1024, hidden_states.shape[0])
     l2_dis, neighbour_indexes = gpu_index_flat.search(xq, k)
-    logger.info("--[2/4] end search...")
+    #logger.info("--[2/4] end search...")
 
-    logger.info("--[3/4] start compute softmax...")
+    #logger.info("--[3/4] start compute softmax...")
     l2_dis = torch.from_numpy(l2_dis).to(hidden_state.device)  # [seq_len, k]
     neighbour_indexes = torch.from_numpy(neighbour_indexes).to(hidden_state.device)
     logits = torch.softmax(-1 * l2_dis.sqrt(), dim=-1)
-    logger.info("--[3/4] end compute softmax...")
+    #logger.info("--[3/4] end compute softmax...")
 
-    logger.info("--[4/4] start collect target index...")
+    #logger.info("--[4/4] start collect target index...")
     size = neighbour_indexes.size()
     target_ids = torch.Tensor(target_ids).long().to(hidden_state.device)
     neighbour_targets = torch.gather(target_ids, dim=0, index=neighbour_indexes.contiguous().view(-1))
     neighbour_targets = neighbour_targets.view(size)
 
     p_knn = torch.scatter_add(p_knn, 1, neighbour_targets, logits)
-    logger.info("--[4/4] end collect target index...")
+    #logger.info("--[4/4] end collect target index...")
     #del hidden_states
     #del res
     #gc.collect()
