@@ -457,16 +457,16 @@ def eval_acc(args, model, tokenizer, file_type='test'):
                                   vocab_size)
                 knn_scores[b] = p_knn
                 # [seq_len, vocab_size]
-            #total_scores = 0.34 * knn_scores + 0.66 * pred_scores
-            knn_mask = knn_scores != 0
-            # [batch_size, seq_len-1,vocab_size]
-            knn_sum = torch.sum(pred_scores * knn_mask, dim=-1, keepdim=True)  # [batch_size, seq_len-1, 1]
-            knn_scores = knn_scores * knn_sum
-            tmp_scores = pred_scores * torch.pow(knn_scores / (pred_scores + knn_scores), 0.25)
-            tmp_sum = torch.sum(tmp_scores * knn_mask, dim=-1, keepdim=True)
-            tmp_scores = tmp_scores / tmp_sum * knn_sum
-
-            total_scores = pred_scores * (~knn_mask) + tmp_scores * knn_mask
+            total_scores = 0.25 * knn_scores + 0.75 * pred_scores
+            # knn_mask = knn_scores != 0
+            # # [batch_size, seq_len-1,vocab_size]
+            # knn_sum = torch.sum(pred_scores * knn_mask, dim=-1, keepdim=True)  # [batch_size, seq_len-1, 1]
+            # knn_scores = knn_scores * knn_sum
+            # tmp_scores = pred_scores * torch.pow(knn_scores / (pred_scores + knn_scores), 0.25)
+            # tmp_sum = torch.sum(tmp_scores * knn_mask, dim=-1, keepdim=True)
+            # tmp_scores = tmp_scores / tmp_sum * knn_sum
+            #
+            # total_scores = pred_scores * (~knn_mask) + tmp_scores * knn_mask
             pred_ids = total_scores.argmax(-1)
 
         all_pred = []
