@@ -33,3 +33,7 @@ tmp_scores = tmp_scores / tmp_sum * knn_sum
 total_scores = pred_scores * (~knn_mask) + tmp_scores * knn_mask
 
 print(total_scores)
+
+c = torch.Tensor([5,6,6]).cuda()
+for d in c:
+    print(d == 5)

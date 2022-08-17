@@ -406,7 +406,7 @@ def eval_acc(args, model, tokenizer, file_type='test'):
                 hidden_states = outputs[1]
                 shifted_hidden_states = hidden_states[..., :-1, :]  # [batch_size, seq_len-1, hidden_dim]
                 targets = inputs[..., 1:]                           # [batch_size, seq_len-1]
-                target_types = targets[..., 1:]
+                target_types = inputs_type[..., 1:]
                 for batch_size in range(inputs.size(0)):
                     start_token = len(saved_target_ids)
                     for target, target_type, hidden_state in zip(targets[batch_size], target_types[batch_size], shifted_hidden_states[batch_size]):
