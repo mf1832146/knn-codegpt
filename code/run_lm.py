@@ -603,7 +603,7 @@ def knn_faiss(hidden_state, cur_meta, saved_hidden_states, saved_target_ids, hid
     index_flat = faiss.IndexFlatL2(d)
     #index_flat = faiss.index_factory(d, 'IVF100, PQ64', faiss.METRIC_L2)
     # make it a flat GPU index
-    gpu_index_flat = faiss.index_cpu_to_gpu(res, 1, index_flat)
+    gpu_index_flat = faiss.index_cpu_to_gpu(res, 0, index_flat)
     #gpu_index_flat.train(hidden_states)
     #gpu_index_flat.add(hidden_states)
     #gpu_index = faiss.index_cpu_to_gpus_list(index_flat, gpus=[1,2])
