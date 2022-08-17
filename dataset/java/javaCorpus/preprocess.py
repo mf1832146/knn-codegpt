@@ -3,13 +3,11 @@
 
 import os
 import argparse
-import re
-import javalang
 import json
 from javalang.tokenizer import *
 from tqdm import tqdm
 
-from dataset.java.utils import deal_with_java
+from dataset.java.api_bench.utils import deal_with_java
 
 
 def get_value_save(obj, key):

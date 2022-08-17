@@ -5,7 +5,7 @@ import os.path
 import javalang
 from tqdm import tqdm
 
-from ..utils import deal_with_java
+from utils import deal_with_java
 
 
 def parse_directory(dir_path):
