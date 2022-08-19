@@ -11,36 +11,33 @@ logging.basicConfig(level=logging.INFO)
 
 def read_true_gts(data_dir, file_type):
     true_gts = []
-    true_imported = []
+    types = []
     data = open(os.path.join(data_dir, f"{file_type}.txt")).readlines()
     for s in data:
         s = json.loads(s)
         code = s['code']
-        import_index = 0
-        if 'before_code' in s:
-            import_index = len(s['before_code'].split())
-        true_imported.append(import_index)
+        code_type = s['token_type']
+
+        types.append(code_type)
         true_gts.append(code)
-    return true_gts, true_imported
+    return true_gts, types
 
 
 def main():
     parser = argparse.ArgumentParser(description='Evaluate leaderboard predictions for code completion (token level).')
     parser.add_argument('--data_dir', '-a', required=True, help="filename of the labels, in txt format.")
     parser.add_argument('--predictions', '-p', required=True, help="filename of the leaderboard predictions, in txt format.")
-    parser.add_argument('--use_import', '-i', action='store_true')
     args = parser.parse_args()
 
     preds = open(args.predictions, "r").readlines()
-    gts, true_imported = read_true_gts(args.data_dir, 'test')
-    types = open(args.types, "r").readlines()
+    gts, types = read_true_gts(args.data_dir, 'test')
 
     total = 0
     correct = 0.0
     code_type_dict = {}
     code_type_correct = {}
     i = 0
-    for pred, gt, code_type, imported_index in zip(preds, gts, types, true_imported):
+    for pred, gt, code_type in zip(preds, gts, types):
         i+=1
         pred = pred.split()
         gt = gt.split()
@@ -53,8 +50,6 @@ def main():
 
         for j, (x, y, z) in enumerate(zip(pred, gt, code_type)):
             if y not in ["<s>", "</s>", "<EOL>", "<pad>"]:
-                if j < imported_index and args.use_import:
-                    continue
                 total += 1
                 if z not in code_type_dict:
                     code_type_dict[z] = 0
