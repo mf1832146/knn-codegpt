@@ -40,8 +40,7 @@ def main():
     for pred, gt, code_type in zip(preds, gts, types):
         i+=1
         pred = pred.split()
-        gt = gt
-        code_type = code_type.split()
+
         if len(pred) != len(gt):
             #print('skip')
             continue
