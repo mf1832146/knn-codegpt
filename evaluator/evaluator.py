@@ -42,7 +42,7 @@ def main():
         pred = pred.split()
 
         if len(pred) != len(gt):
-            #print('skip')
+            print('skip')
             continue
         assert len(pred) == len(gt), f"Sequence length of prediction and answer are not equal, \n{pred}: \n{gt}\n{i-1}"
         assert len(code_type) == len(gt), f"Code type length mush be equal to the ground truth. \n{code_type}\n: {gt}\n{i-1}"
