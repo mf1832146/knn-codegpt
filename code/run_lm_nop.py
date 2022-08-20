@@ -585,7 +585,7 @@ def knn_faiss(hidden_state, cur_meta, saved_hidden_states, saved_target_ids, hid
 
     # [seq_len]
     # [seq_len, 1024]
-    zeros = np.array([0] * nq)
+    zeros = np.array([0] * nq).astype('float32')
     zeros = np.expand_dims(zeros, axis=1)
     l2_dis = np.concatenate([zeros, l2_dis], axis=1)
 
