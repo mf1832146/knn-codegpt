@@ -398,7 +398,7 @@ def eval_acc(args, model, tokenizer, file_type='test'):
                     for target, pred_id, hidden_state in zip(targets[batch_size], pred_ids[batch_size],
                                                              shifted_hidden_states[batch_size]):
                         if target != tokenizer.pad_token_id:
-                            if pred_ids == target:  # 只保存错误的
+                            if pred_id == target:  # 只保存错误的
                                 continue
 
                             saved_hidden_states.append(hidden_state.data.cpu().tolist())
