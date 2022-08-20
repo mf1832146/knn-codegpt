@@ -447,7 +447,7 @@ def eval_acc(args, model, tokenizer, file_type='test'):
                 knn_scores[b] = p_knn
                 alphas.append(alpha)
                 # [seq_len, vocab_size]
-            alphas = torch.cat(alphas, dim=0).unsuqeeze(-1)
+            alphas = torch.cat(alphas, dim=0).unsqueeze(-1)
             print(alphas.size())
             total_scores = knn_scores + alphas * pred_scores
             pred_ids = total_scores.argmax(-1)
