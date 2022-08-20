@@ -66,7 +66,6 @@ MODEL_CLASSES = {
 }
 
 
-
 def load_and_cache_examples(args, tokenizer, evaluate=False):
     if args.not_pretrain:
         dataset = finetuneDataset(tokenizer, args, logger, file_type='dev' if evaluate else 'train', 
@@ -413,6 +412,7 @@ def eval_acc(args, model, tokenizer, file_type='test'):
                         if target != tokenizer.pad_token_id:
                             if args.only_id and target_type != 5:
                                 continue
+
                             saved_hidden_states.append(hidden_state.data.cpu().tolist())
                             saved_target_ids.append(target.data.cpu().tolist())
                     end_token = len(saved_target_ids)
@@ -571,6 +571,9 @@ def prepare_data(saved_meta, data_store_len):
     return file_mask
 
 
+
+
+
 def knn_faiss(hidden_state, cur_meta, saved_hidden_states, saved_target_ids, hidden_mask, vocab_size):
     proj_id, file_id = cur_meta.data.cpu().tolist()
 
@@ -587,7 +590,7 @@ def knn_faiss(hidden_state, cur_meta, saved_hidden_states, saved_target_ids, hid
     res = faiss.StandardGpuResources()  # use a single GPU
 
     index_flat = faiss.IndexFlatL2(d)
-    gpu_index_flat = faiss.index_cpu_to_gpu(res, 0, index_flat)
+    gpu_index_flat = faiss.index_cpu_to_gpu(res, 1, index_flat)
     gpu_index_flat.add(hidden_states)
     
     k = min(1024, hidden_states.shape[0])

@@ -141,7 +141,7 @@ class finetuneDataset(Dataset):
                 #    code += before_code + " "
                 #code += after_code
                 code = get_value_save(x, 'code')
-                project_name = get_value_save(x, 'project')
+                #project_name = get_value_save(x, 'project')
                 x = code
 
                 if x.startswith("<s>") and x.endswith("</s>"):
@@ -323,6 +323,110 @@ class EvalDataset(Dataset):
     def __getitem__(self, item):
         proj_meta = torch.LongTensor([self.sample2proj[item], self.sample2file[item]])
         return torch.tensor(self.inputs[item]), torch.IntTensor(self.input_types[item]), proj_meta
+
+
+class EvalDomainDataset(Dataset):
+    def __init__(self, tokenizer, args, logger, file_type='train', block_size=1024):
+        if not os.path.exists(args.output_dir):
+            os.makedirs(args.output_dir)
+        cached_file = os.path.join(args.output_dir, file_type+"_blocksize_%d"%(block_size))
+        self.file_type = file_type
+        if os.path.exists(cached_file) and not args.overwrite_cache:
+            with open(cached_file, 'rb') as handle:
+                load_data = pickle.load(handle)
+
+                self.inputs = load_data['input_ids']
+                self.input_types = load_data['input_types']
+
+        else:
+            self.inputs = []
+            input_types = []
+
+            datafile = os.path.join(args.data_dir, f"{file_type}.txt")
+            with open(datafile) as f:
+                data = f.readlines()
+
+            length = len(data)
+            logger.info("Data size: %d"%(length))
+            input_ids = []
+
+            for idx,x in enumerate(data):
+                x = json.loads(x)
+                code = get_value_save(x, 'code')
+                code_type = get_value_save(x, 'token_type')
+
+                try:
+                    code_token_ids = []
+                    code_type_ids = []
+
+                    for i, code_token in enumerate(code):
+                        if i > 0:
+                            code_token = ' ' + code_token  # 补上前缀
+                        token_id = tokenizer.encode(code_token)
+                        code_token_ids.extend(token_id)
+                        code_type_ids.extend([code_type[i]] * len(token_id))
+
+                    assert len(code_token_ids) == len(code_type_ids)
+
+                    i = 0
+                    while i < len(code_token_ids):
+                        sample = code_token_ids[i: i + block_size]
+                        sample_type = code_type_ids[i: i+block_size]
+                        if len(sample) == block_size:
+                            for j in range(block_size):
+                                if tokenizer.convert_ids_to_tokens(sample[block_size - 1 - j])[
+                                    0] == '\u0120' or tokenizer.convert_ids_to_tokens(
+                                    sample[block_size - 1 - j]).startswith("<NUM_LIT"):
+                                    break
+                                if sample[block_size - 1 - j] in [tokenizer.bos_token_id, tokenizer.eos_token_id,
+                                                                  tokenizer.sep_token_id]:
+                                    if sample[block_size - 1 - j] != tokenizer.bos_token_id:
+                                        j -= 1
+                                    break
+                            if j == block_size - 1:
+                                print(tokenizer.decode(sample))
+                                exit()
+                            sample = sample[: block_size - 1 - j]
+                            sample_type = sample_type[: block_size - 1 - j]
+                            i += len(sample)
+                            pad_len = block_size - len(sample)
+                            sample += [tokenizer.pad_token_id] * pad_len
+                            sample_type += [tokenizer.pad_token_id] * pad_len
+                            input_ids.append(sample)
+                            input_types.append(sample_type)
+                        else:
+                            pad_len = block_size - len(sample)
+                            sample += [tokenizer.pad_token_id] * pad_len
+                            sample_type += [tokenizer.pad_token_id] * pad_len
+                            input_ids.append(sample)
+                            input_types.append(sample_type)
+                            break
+                except Exception as e:
+                    print(e)
+                    raise e
+                if idx % (length // 10) == 0:
+                    percent = idx / (length // 10) * 10
+                    logger.warning("load %d" % (percent))
+
+            del data
+            gc.collect()
+
+            self.inputs = input_ids
+            self.input_types = input_types
+            save_file = {
+                'input_ids': input_ids,
+                'input_types': input_types
+            }
+
+            with open(cached_file, 'wb') as handle:
+                pickle.dump(save_file, handle, protocol=pickle.HIGHEST_PROTOCOL)
+
+    def __len__(self):
+        return len(self.inputs)
+
+    def __getitem__(self, item):
+        return torch.tensor(self.inputs[item]), torch.IntTensor(self.input_types[item])
+
 
 
 class lineDataset(Dataset):

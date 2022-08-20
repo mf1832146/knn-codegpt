@@ -1,3 +1,4 @@
+import numpy
 import numpy as np
 
 d = 64                           # dimension
@@ -27,6 +28,7 @@ k = 4                          # we want to see 4 nearest neighbors
 D, I = gpu_index_flat.search(xq, k)  # actual search
 print(I[:5])                   # neighbors of the 5 first queries
 print(I[-5:])                  # neighbors of the 5 last queries
+
 
 
 ## Using an IVF index
