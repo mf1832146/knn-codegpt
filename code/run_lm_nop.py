@@ -583,6 +583,8 @@ def knn_faiss(hidden_state, cur_meta, saved_hidden_states, saved_target_ids, hid
     k = min(1024, hidden_states.shape[0])
     l2_dis, neighbour_indexes = gpu_index_flat.search(xq, k)
 
+    print(l2_dis.shape)
+
     # [seq_len]
     # [seq_len, 1024]
     zeros = np.array([0] * nq).astype('float32')
@@ -593,8 +595,12 @@ def knn_faiss(hidden_state, cur_meta, saved_hidden_states, saved_target_ids, hid
     neighbour_indexes = torch.from_numpy(neighbour_indexes).to(hidden_state.device)
     logits = torch.softmax(-1 * l2_dis.sqrt(), dim=-1)
 
+    print(logits.size())
+
     alpha = logits[:, 0]
     logits = logits[: 1:]
+
+    print('out size: ', logits.size())
 
     size = neighbour_indexes.size()
     target_ids = torch.Tensor(target_ids).long().to(hidden_state.device)
