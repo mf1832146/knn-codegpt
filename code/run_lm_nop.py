@@ -577,7 +577,7 @@ def knn_faiss(hidden_state, cur_meta, saved_hidden_states, saved_target_ids, hid
     res = faiss.StandardGpuResources()  # use a single GPU
 
     index_flat = faiss.IndexFlatL2(d)
-    gpu_index_flat = faiss.index_cpu_to_gpu(res, 1, index_flat)
+    gpu_index_flat = faiss.index_cpu_to_gpu(res, 0, index_flat)
     gpu_index_flat.add(hidden_states)
 
     k = min(1024, hidden_states.shape[0])
