@@ -570,6 +570,8 @@ def knn_faiss(hidden_state, cur_meta, saved_hidden_states, saved_target_ids, hid
     alpha = torch.ones(hidden_state.size(0)).to(hidden_state.device)
 
     if len(hidden_states) == 0:
+        print('1111')
+        print(alpha.size())
         return p_knn, alpha
 
     hidden_states = np.array(hidden_states).astype('float32')  # [nb, d]
