@@ -443,9 +443,9 @@ def eval_acc(args, model, tokenizer, file_type='test'):
                 cur_hidden_state = hidden_states[b]
                 alpha, p_knn = knn_faiss(cur_hidden_state, proj_meta[b], saved_hidden_states, saved_target_ids, hidden_mask,
                                          vocab_size)
-                knn_scores[b] = p_knn
+                knn_scores[b] = p_knn * alpha.unsqueeze(-1)
                 # [seq_len, vocab_size]
-            total_scores = knn_scores + alpha * pred_scores
+            total_scores = knn_scores + pred_scores
             pred_ids = total_scores.argmax(-1)
 
         all_pred = []
