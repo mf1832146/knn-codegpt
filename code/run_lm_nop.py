@@ -567,9 +567,10 @@ def knn_faiss(hidden_state, cur_meta, saved_hidden_states, saved_target_ids, hid
     p_knn = torch.zeros((hidden_state.size(0), vocab_size)).to(hidden_state.device)
     hidden_states = saved_hidden_states[hidden_mask[file_id]]
     target_ids = saved_target_ids[hidden_mask[file_id]]
+    alpha = torch.ones(hidden_state.size(0)).to(hidden_state.device)
 
     if len(hidden_states) == 0:
-        return p_knn
+        return p_knn, alpha
 
     hidden_states = np.array(hidden_states).astype('float32')  # [nb, d]
     nq, d = hidden_state.size()
