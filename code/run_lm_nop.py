@@ -439,13 +439,17 @@ def eval_acc(args, model, tokenizer, file_type='test'):
             pred_scores = torch.softmax(pred_scores, dim=-1)
             batch_size, seq_len, vocab_size = pred_scores.size()
             knn_scores = torch.zeros(pred_scores.size()).to(hidden_states.device)
+            alphas = []
             for b in range(batch_size):
                 cur_hidden_state = hidden_states[b]
                 alpha, p_knn = knn_faiss(cur_hidden_state, proj_meta[b], saved_hidden_states, saved_target_ids, hidden_mask,
                                          vocab_size)
-                knn_scores[b] = p_knn * alpha.unsqueeze(-1)
+                knn_scores[b] = p_knn
+                alphas.append(alpha)
                 # [seq_len, vocab_size]
-            total_scores = knn_scores + pred_scores
+            alphas = torch.cat(alphas, dim=0).unsuqeeze(-1)
+            print(alphas.size())
+            total_scores = knn_scores + alphas * pred_scores
             pred_ids = total_scores.argmax(-1)
 
         all_pred = []
@@ -570,8 +574,6 @@ def knn_faiss(hidden_state, cur_meta, saved_hidden_states, saved_target_ids, hid
     alpha = torch.ones(hidden_state.size(0)).to(hidden_state.device)
 
     if len(hidden_states) == 0:
-        print('1111')
-        print(alpha.size())
         return p_knn, alpha
 
     hidden_states = np.array(hidden_states).astype('float32')  # [nb, d]
