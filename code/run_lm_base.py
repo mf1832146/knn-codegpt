@@ -411,7 +411,7 @@ def eval_acc(args, model, tokenizer, file_type='test'):
     total_gt = []
 
     for step, batch in tqdm(enumerate(eval_dataloader)):
-        inputs, proj_meta = batch
+        inputs, code_types, proj_meta = batch
         inputs = inputs.to(args.device)
 
         with torch.no_grad():
