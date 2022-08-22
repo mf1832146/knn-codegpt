@@ -143,13 +143,21 @@ class finetuneDataset(Dataset):
                 code = get_value_save(x, 'code')
                 #project_name = get_value_save(x, 'project')
                 x = code
-
-                if x.startswith("<s>") and x.endswith("</s>"):
-                    pass
-                else:
-                    x = "<s> " + x + " </s>"
+                #
+                # if x.startswith("<s>") and x.endswith("</s>"):
+                #     pass
+                # else:
+                #     x = "<s> " + x + " </s>"
                 try:
-                    input_ids.extend(tokenizer.encode(x))
+                    # input_ids.extend(tokenizer.encode(x))
+                    #
+                    # code_token_ids = []
+                    for i, code_token in enumerate(code):
+                        if i > 0:
+                            code_token = ' ' + code_token  # 补上前缀
+                        token_id = tokenizer.encode(code_token)
+                        input_ids.extend(token_id)
+
                 except Exception:
                     pass
                 if idx % (length//10) == 0:

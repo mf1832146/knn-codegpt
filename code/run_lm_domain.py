@@ -576,10 +576,9 @@ def build_faiss(hidden_states):
     hidden_states = np.array(hidden_states).astype('float32')  # [nb, d]
     d = hidden_states.shape[-1]
     res = faiss.StandardGpuResources()  # use a single GPU
-    nlist = 100
 
     index_flat = faiss.IndexFlatL2(d)
-    gpu_index_flat = faiss.index_cpu_to_gpu(res, 0, index_flat)
+    gpu_index_flat = faiss.index_cpu_to_gpu(res, 1, index_flat)
     gpu_index_flat.add(hidden_states)
 
 

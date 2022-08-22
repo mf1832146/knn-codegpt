@@ -2,6 +2,7 @@ import re
 import javalang
 import json
 from javalang.tokenizer import *
+import codeprep.api.text as cp
 
 
 lits = json.load(open("../literals.json"))
@@ -52,6 +53,15 @@ def process_string(token, special_chars={" ": "U+0020", ",": "U+002C"}):
             else f"{qualifier}{start_quote}<CHAR_LIT>{end_quote}"
         )
     return ret
+
+
+def deal_with_java(code):
+    processed_source,  metadata = cp.nosplit(code,
+                                             no_spaces=True,
+                                             no_unicode=True,
+                                             no_com=True,
+                                             max_str_length=15,
+                                             return_metadata=True)
 
 
 def deal_with_java(code):

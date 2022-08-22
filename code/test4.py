@@ -42,10 +42,12 @@
 
 import numpy as np
 
-d = np.array([1,2,3])
-e = np.array([0]* 10)
+def softmax(x):
+    f_x = np.exp(x) / np.sum(np.exp(x))
+    return f_x
 
-d = np.concatenate([e, d], axis=0)
+d = np.array([0, -3,-4, -5])
+d = softmax(d)
+
 
 print(d)
-print(d[1:])
