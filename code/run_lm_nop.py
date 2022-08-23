@@ -432,7 +432,10 @@ def eval_acc(args, model, tokenizer, file_type='test'):
         inputs = inputs.to(args.device)
 
         with torch.no_grad():
-            outputs = model(inputs, return_dict=False)
+            if args.model_type == 'rnn':
+                outputs = model(inputs)
+            else:
+                outputs = model(inputs, return_dict=False)
             pred_scores = outputs[0]
             hidden_states = outputs[1]
             # pred_scores [batch_size, seq_len-1, vocab_size]

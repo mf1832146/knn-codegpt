@@ -513,6 +513,7 @@ def read_true_gts(data_dir, file_type):
     for s in data:
         s = json.loads(s)
         code = s['code']
+        code = ' '.join(code)
         true_gts.append(code)
     return true_gts
 
