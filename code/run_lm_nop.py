@@ -385,7 +385,10 @@ def eval_acc(args, model, tokenizer, file_type='test'):
             inputs, inputs_type, proj_meta = batch
             inputs = inputs.to(args.device)
             with torch.no_grad():
-                outputs = model(inputs, return_dict=False)
+                if args.model_type == 'rnn':
+                    outputs = model(inputs)
+                else:
+                    outputs = model(inputs, return_dict=False)
                 pred_scores = outputs[0]
                 hidden_states = outputs[1]
                 pred_ids = pred_scores.argmax(-1)
@@ -544,6 +547,7 @@ def read_true_gts(data_dir, file_type):
 def prepare_data(saved_meta, data_store_len):
     file_mask = {}
     proj_mask = {}
+    file_pos = {}
     i = 0
     for proj_id in saved_meta.keys():
         print(i, ' done.')
@@ -551,6 +555,9 @@ def prepare_data(saved_meta, data_store_len):
         for cur_file in saved_meta[proj_id]:
             cur_file_id, start_token, end_token = cur_file
             hidden_state_mask[start_token: end_token] = 1
+            if cur_file_id not in file_pos:
+                file_pos[cur_file_id] = []
+            file_pos[cur_file_id].append((start_token, end_token))
         proj_mask[proj_id] = hidden_state_mask
         i = i + 1
 
@@ -560,9 +567,10 @@ def prepare_data(saved_meta, data_store_len):
         print(i, ' done.')
         hidden_state_mask = proj_mask[proj_id]
         for cur_file in tqdm(saved_meta[proj_id]):
-            cur_file_id, start_token, end_token = cur_file
+            cur_file_id, _, _ = cur_file
             file_hidden_state_mask = copy.deepcopy(hidden_state_mask)
-            file_hidden_state_mask[start_token: end_token] = 0
+            for (start_token, end_token) in file_pos[cur_file_id]:
+                file_hidden_state_mask[start_token: end_token] = 0
             file_mask[cur_file_id] = file_hidden_state_mask
         i = i + 1
     return file_mask

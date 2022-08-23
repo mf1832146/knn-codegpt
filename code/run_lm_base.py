@@ -421,6 +421,7 @@ def eval_acc(args, model, tokenizer, file_type='test'):
                 outputs = model(inputs, return_dict=False)
             pred_scores = outputs[0]
             hidden_states = outputs[1]
+
             # pred_scores [batch_size, seq_len-1, vocab_size]
             #pred_scores = torch.softmax(pred_scores, dim=-1)
             # batch_size, seq_len, vocab_size = pred_scores.size()
