@@ -385,7 +385,6 @@ def eval_acc(args, model, tokenizer, file_type='test'):
             inputs, inputs_type, proj_meta = batch
             inputs = inputs.to(args.device)
             with torch.no_grad():
-                print(args.model_type)
                 if args.model_type == 'rnn':
                     outputs = model(inputs)
                 else:
