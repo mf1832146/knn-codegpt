@@ -45,8 +45,8 @@ class RNNModel(nn.Module):
             output, hidden = self.rnn(emb, hidden)
         else:
             output, hidden = self.rnn(emb)
-        output = self.drop(output)
-        output = self.decoder(output)
+        hidden = self.drop(output)
+        output = self.decoder(hidden)
         # decoded = decoded.view(-1, self.ntoken)
         # output = F.log_softmax(decoded, dim=1)
         if labels is not None:
