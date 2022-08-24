@@ -4,8 +4,8 @@ import json
 from javalang.tokenizer import *
 import codeprep.api.text as cp
 
-
-lits = json.load(open("../literals.json"))
+import json
+lits = json.load(open("../../api_bench/java/literals.json"))
 
 token_types = {'BOS': 1,
                'Literals': 2,
@@ -62,6 +62,8 @@ def deal_with_java(code):
                                              no_com=True,
                                              max_str_length=15,
                                              return_metadata=True)
+
+
 
 
 def deal_with_java(code):
